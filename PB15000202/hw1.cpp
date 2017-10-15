@@ -1,5 +1,4 @@
-#include "SubImageMatch.h"
-/*
+//#include "SubImageMatch.h"
 #include "opencv2/opencv.hpp"
 #include <opencv2/core/core.hpp>  
 #include <opencv2/highgui/highgui.hpp>  
@@ -7,12 +6,12 @@
 #include <math.h>
 #include <time.h>
 //#include "SubImageMatch.h"
-*/
+
 using namespace cv;
 using namespace std;
 
 
-#define IMG_SHOW
+//#define IMG_SHOW
 
 #define MY_OK 1
 #define MY_FAIL -1
@@ -20,7 +19,7 @@ using namespace std;
 #define TEST_TIMES 1
 #endif
 #ifndef IMG_SHOW
-#define TEST_TIMES 5
+#define TEST_TIMES 1
 #endif
 using namespace cv;
 using namespace std;
@@ -221,8 +220,7 @@ const int Rootbuf[] = { 1,1,2,3,4,6,8,11,
 
 int FastRoot(int x) {
 	if (x<0) {
-		cout << "负数无实根！" << endl;
-		return 0;
+		return 46341;
 	}
 	if (x == 0) { return 0; }
 	int i = 0;
@@ -472,6 +470,8 @@ int test_for_difference(Mat grayImg, Mat subImg, int x, int y)
 	int temp_for_big = y*width + x;
 	int width_diff = width - sub_width;
 	int temp = 0;
+	uchar* tempptr=grayImg.data+ y*width + x;//测试，发现没什么效果，大概也就5%
+	uchar* subptr = subImg.data;
 	//遍历模板图上的每一个像素
 
 	for (int i = 0; i < sub_height; i++)
@@ -479,7 +479,7 @@ int test_for_difference(Mat grayImg, Mat subImg, int x, int y)
 		for (int j = 0; j < sub_width; j++)
 		{
 
-			temp = grayImg.data[temp_for_big] - subImg.data[temp_for_sub];
+			temp = *tempptr - *subptr;
 			if (temp >> 31)
 				total_diff -= temp;
 			else
@@ -488,9 +488,11 @@ int test_for_difference(Mat grayImg, Mat subImg, int x, int y)
 			//cout << temp << endl;
 			temp_for_sub++;
 			temp_for_big++;
+			tempptr++; subptr++;
 
 		}
 		temp_for_big += width_diff;
+		tempptr += width_diff;
 	}
 	return total_diff;
 }
@@ -530,7 +532,7 @@ int ustc_SubImgMatch_gray(Mat grayImg, Mat subImg, int* x, int* y) {
 
 		}
 	}
-	int diffmin = 10000;
+	int diffmin = sub_width*sub_height*20;
 	for (int i = 0; i < height - sub_height; i++)
 	{
 		for (int j = 0; j < width - sub_width; j++)
@@ -642,7 +644,7 @@ int ustc_SubImgMatch_bgr(Mat colorImg, Mat subImg, int* x, int* y){
 
 		}
 	}
-	int diffmin = 100000;
+	int diffmin = sub_width*sub_height * 50;
 	for (int i = 0; i < height - sub_height; i++)
 	{
 		for (int j = 0; j < width - sub_width; j++)
@@ -682,25 +684,28 @@ float test_for_corrdifference(Mat grayImg, Mat subImg, int x, int y)
 	int temp_for_sub = 0;
 	int temp_for_big = y*width + x;
 	int width_diff = width - sub_width;
-	int temp_add_big = 0;
-	int temp_add_sub = 0;
-	int temp_add_all = 0;
+	long temp_add_big = 0;
+	long temp_add_sub = 0;
+	long temp_add_all = 0;
 	//遍历模板图上的每一个像素
-
 	for (int i = 0; i < sub_height; i++)
 	{
 		for (int j = 0; j < sub_width; j++)
 		{
 
-			temp_add_all += grayImg.data[temp_for_big] * subImg.data[temp_for_sub];
-			temp_add_big += squareBuf[grayImg.data[temp_for_big]];
-			temp_add_sub += squareBuf[subImg.data[temp_for_sub]];
-			temp_for_sub++;
+			temp_add_all += (long)grayImg.data[temp_for_big] * subImg.data[temp_for_sub];
+			temp_add_big += (long)squareBuf[grayImg.data[temp_for_big]];
+			temp_add_sub += (long)squareBuf[subImg.data[temp_for_sub]];
 			temp_for_big++;
+			temp_for_sub++;
 
 		}
 		temp_for_big += width_diff;
 	}
+	temp_add_all >>= 4;
+	temp_add_big >>= 4;
+	temp_add_sub >>= 4;
+	//cout << (long)temp_add_all << " " << (long)temp_add_big << " " << temp_add_sub << endl;
 	total_diff = (float)temp_add_all / (float)(FastRoot(temp_add_big)*FastRoot(temp_add_sub));
 	//cout << total_diff;
 	return total_diff;
@@ -728,9 +733,7 @@ int ustc_SubImgMatch_corr(Mat grayImg, Mat subImg, int* x, int* y) {
 	//int temp_for_search = 0;
 	float total_diff = 0;
 	int i, j, m, n;
-	Mat newcrop = grayImg(Rect(100, 320, 40, 30)).clone();
-
-
+	
 	for (i = 0; i < height - sub_height; i++)
 	{
 		for (j = 0; j < width - sub_width; j++)
@@ -917,7 +920,7 @@ int ustc_SubImgMatch_angle(Mat grayImg, Mat subImg, int* x, int* y)
 
 		}
 	}
-	int diffmin = 100000;
+	int diffmin = sub_width*sub_height * 20;
 	for (int i = 0; i < height - sub_height; i++)
 	{
 		for (int j = 0; j < width - sub_width; j++)
@@ -1091,7 +1094,7 @@ int ustc_SubImgMatch_mag(Mat grayImg, Mat subImg, int* x, int* y) {
 
 		}
 	}
-	int diffmin = 100000;
+	int diffmin = sub_width*sub_height * 20;
 	for (int i = 0; i < height - sub_height; i++)
 	{
 		for (int j = 0; j < width - sub_width; j++)
@@ -1176,17 +1179,14 @@ int ustc_SubImgMatch_hist(Mat grayImg, Mat subImg, int* x, int* y) {
 		for (j = 0; j < width - sub_width; j++)
 		{
 			total_diff = test_for_histdifference(grayImg, histBuff, j, i, 256, sub_width, sub_height);
-
-			//cout << "coord: " << i << " " << j << endl;
-			//存储当前像素位置的匹配误差
-			//cout << i<<" "<<j<<" "<<total_diff << endl;
 			((float*)searchImg.data)[i*width + j] = total_diff;
-			total_diff = 0;
+			//total_diff = 0;
 
 		}
 	}
-	int diffmin = 100000;
-	for (int i = 100; i < height - sub_height; i++)
+	int diffmin = sub_width*sub_height * 20;
+	//cout << (int)(((float*)searchImg.data))[300 * width + 270] << " "<< (int)(((float*)searchImg.data))[270 * width + 300] <<endl;
+	for (int i = 0; i < height - sub_height; i++)
 	{
 		for (int j = 0; j < width - sub_width; j++)
 		{
@@ -1207,86 +1207,4 @@ int ustc_SubImgMatch_hist(Mat grayImg, Mat subImg, int* x, int* y) {
 	return 1;
 }
 
-
-
-
-int main() {
-	Mat colorImg= imread("pic.jpg", 1);
-	Mat grayImg = imread("pic.jpg", 0);
-	if (NULL == grayImg.data)
-	{
-		cout << "image read failed." << endl;
-		return 0;
-	}
-
-	int width = grayImg.cols;
-	int height = grayImg.rows;
-
-	Mat testgrayimg(height, width, CV_8UC1);
-	Mat Binary_img(height, width, CV_8UC1);
-	Mat gradImg_x(height, width, CV_32FC1);
-	Mat gradImg_y(height, width, CV_32FC1);
-	Mat angleImg(height, width, CV_32FC1);
-	Mat magImg(height, width, CV_32FC1);
-
-	Mat SubImage(50, 30, CV_8UC1);
-	SubImage = grayImg(Rect(100, 321, 40, 30)).clone();
-
-	Mat colorSubImage(40, 40, CV_8UC3);
-	colorSubImage = colorImg(Rect(120, 320, 40, 30)).clone();
-
-#ifdef IMG_SHOW
-	namedWindow("grayImg", 1);
-	imshow("grayImg", grayImg);
-	namedWindow("Subimg", 1);
-	imshow("Subimg", SubImage);
-	waitKey(1);
-
-#endif
-	int i = 0;
-	int j = 0;
-	int *x = &i, *y = &j;
-	time_t start = clock();
-	int hist[256];
-	for (int i = 0; i < TEST_TIMES; i++)
-	{
-		
-
-		ustc_ConvertBgr2Gray(colorImg,testgrayimg);
-		ustc_CalcGrad(grayImg,gradImg_x,gradImg_y);
-		ustc_CalcAngleMag(gradImg_x, gradImg_y, angleImg, magImg);
-		ustc_Threshold(grayImg, Binary_img, 100);
-		ustc_CalcHist(grayImg, hist, 256);
-		
-		cout << 1 << endl;
-		ustc_SubImgMatch_gray(grayImg, SubImage, x, y);
-		cout << "coordinates: " << *x << " " << *y << endl;
-		cout << 2 << endl;
-		ustc_SubImgMatch_bgr(colorImg, colorSubImage, x, y); 
-		cout << "coordinates: " << *x << " " << *y << endl;
-		cout << 3 << endl;
-		ustc_SubImgMatch_corr(grayImg, SubImage, x, y); 
-		cout << "coordinates: " << *x << " " << *y << endl;
-		cout << 4 << endl;
-		ustc_SubImgMatch_angle(grayImg, SubImage, x, y); 
-		cout << "coordinates: " << *x << " " << *y << endl;
-		cout << 5 << endl;
-		ustc_SubImgMatch_mag(grayImg, SubImage, x, y);
-		cout << "coordinates: " << *x << " " << *y << endl;
-		cout << 6 << endl;
-		ustc_SubImgMatch_hist(grayImg, SubImage, x, y); 
-		cout << "coordinates: " << *x << " " << *y << endl;
-
-	}
-	time_t end = clock();
-	cout << TEST_TIMES << " time: " << (end - start) << endl;
-
-	//namedWindow("Subimg", 1);
-	//imshow("Subimg", SubImage);
-	waitKey(0);
-	int temp;
-	//cin >> temp;
-
-	return 0;
-}
 
